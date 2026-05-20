@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import matplotlib
 
-# 固定中文乱码问题（必须放在最前面）
+# ========== 永久修复中文乱码（必须放在最前面）==========
+matplotlib.use('Agg')
 matplotlib.rcParams['axes.unicode_minus'] = False
 matplotlib.rcParams['font.sans-serif'] = ["WenQuanYi Zen Hei", "SimHei", "Microsoft YaHei"]
 import matplotlib.pyplot as plt
@@ -45,21 +46,17 @@ def load_city_rural_data():
     exp_city = expense[expense["指标"].str.contains("城镇居民", na=False)].copy()
     exp_rural = expense[expense["指标"].str.contains("农村居民", na=False)].copy()
 
-    # 数据清洗（只写一次！）
     for df in [inc_city, inc_rural, exp_city, exp_rural]:
         df["年份"] = df["年份"].astype(str)
         df["数值"] = pd.to_numeric(df["数值"], errors="coerce")
         df.dropna(subset=["数值"], inplace=True)
 
-    # 只在最后 return 一次
     return inc_city, inc_rural, exp_city, exp_rural
 
 
-# 加载数据
 df_income, df_expense, df_merged = load_data()
 inc_city, inc_rural, exp_city, exp_rural = load_city_rural_data()
 
-# ====================== 侧边栏 ======================
 with st.sidebar:
     st.title("📊 数据分析面板")
     st.divider()
@@ -96,7 +93,6 @@ with st.sidebar:
     st.divider()
     st.caption("✅ 数据加载完成")
 
-# ====================== 1. 收入/支出板块 ======================
 if data_type in ["💰 收入数据", "💸 支出数据"]:
     type_text = "收入" if data_type == "💰 收入数据" else "支出"
     filtered = df[
@@ -171,7 +167,7 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.divider()
 
-    # ====================== 这里修复了标题反了 ======================
+    # ====================== 年份标题已修复 ======================
     if type_text == "收入":
         st.subheader("📈 2021-2024 年收入变化趋势")
     else:
@@ -209,7 +205,6 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
         4. 历年消费数据稳步增长，体现居民生活品质持续提升。
         """)
 
-# ====================== 2. 收支对比 ======================
 elif data_type == "⚖️ 收支对比":
     st.markdown(f"""
     <div style="background:#F0F7FF;padding:20px;border-radius:12px;">
@@ -305,7 +300,6 @@ elif data_type == "⚖️ 收支对比":
     4. 高收入省份可同时兼顾高质量消费与合理储蓄，民生发展综合质量更优。
     """)
 
-# ====================== 3. 城乡对比 ======================
 elif data_type == "🏙️ 城乡对比":
     st.markdown(f"""
     <div style="background:#E8F4FF;padding:20px;border-radius:12px;">
