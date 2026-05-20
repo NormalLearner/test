@@ -1,5 +1,10 @@
 import streamlit as st
 import pandas as pd
+import matplotlib
+
+# 固定中文乱码问题（必须放在最前面）
+matplotlib.rcParams['axes.unicode_minus'] = False
+matplotlib.rcParams['font.sans-serif'] = ["WenQuanYi Zen Hei", "SimHei", "Microsoft YaHei"]
 import matplotlib.pyplot as plt
 
 st.set_page_config(
@@ -8,10 +13,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-plt.rcParams['font.sans-serif'] = ["Microsoft YaHei", "SimHei"]
-plt.rcParams['axes.unicode_minus'] = False
-
 
 @st.cache_data
 def load_data():
@@ -170,10 +171,12 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.divider()
 
-    if type_text == "支出":
-        st.subheader("📈 2022-2025 年收入变化趋势")
+    # ====================== 这里修复了标题反了 ======================
+    if type_text == "收入":
+        st.subheader("📈 2021-2024 年收入变化趋势")
     else:
-        st.subheader("📈 2021-2024 年支出变化趋势")
+        st.subheader("📈 2022-2025 年支出变化趋势")
+
     provinces = sorted(df["省份"].unique())
     selected_provs = st.multiselect("选择省份对比", provinces, default=provinces[:3])
 
