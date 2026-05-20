@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# ===================== 页面配置 =====================
 st.set_page_config(
     page_title="全国居民收支分析平台",
     page_icon="📊",
@@ -14,24 +13,20 @@ plt.rcParams['font.sans-serif'] = ["Microsoft YaHei", "SimHei"]
 plt.rcParams['axes.unicode_minus'] = False
 
 
-# ===================== 数据加载 =====================
 @st.cache_data
 def load_data():
-    # 1. 读取收入数据
     income = pd.read_csv("data/全国各省居民收入数据_2021-2025.csv")
     income = income[income["指标"].str.contains("全体居民", na=False)].copy()
     income["年份"] = income["年份"].astype(str)
     income["数值"] = pd.to_numeric(income["数值"], errors="coerce")
     income = income.dropna(subset=["数值"])
 
-    # 2. 读取支出数据
     expense = pd.read_csv("data/全国各省居民支出数据_2021-2025.csv")
     expense = expense[expense["指标"].str.contains("全体居民", na=False)].copy()
     expense["年份"] = expense["年份"].astype(str)
     expense["数值"] = pd.to_numeric(expense["数值"], errors="coerce")
     expense = expense.dropna(subset=["数值"])
 
-    # 3. 直接读取我们生成好的 CSV
     merged = pd.read_csv("data/收支合并数据.csv")
     merged["年份"] = merged["年份"].astype(str)
     merged = merged.dropna()
@@ -39,7 +34,6 @@ def load_data():
     return income, expense, merged
 
 
-# 城乡数据加载函数
 @st.cache_data
 def load_city_rural_data():
     income = pd.read_csv("data/全国各省居民收入数据_2021-2025.csv")
@@ -50,28 +44,21 @@ def load_city_rural_data():
     exp_city = expense[expense["指标"].str.contains("城镇居民", na=False)].copy()
     exp_rural = expense[expense["指标"].str.contains("农村居民", na=False)].copy()
 
-    for df in [inc_city, inc_rural, exp_city, exp_rural]:
-        df["年份"] = df["年份"].astype(str)
-        df["数值"] = pd.to_numeric(df["数值"], errors="coerce")
-        # 不在这里 dropna，保留所有年份的行
-
-    return inc_city, inc_rural, exp_city, exp_rural
-
-
-    return inc_city, inc_rural, exp_city, exp_rural
-
+    # 数据清洗（只写一次！）
     for df in [inc_city, inc_rural, exp_city, exp_rural]:
         df["年份"] = df["年份"].astype(str)
         df["数值"] = pd.to_numeric(df["数值"], errors="coerce")
         df.dropna(subset=["数值"], inplace=True)
 
+    # 只在最后 return 一次
     return inc_city, inc_rural, exp_city, exp_rural
 
 
+# 加载数据
 df_income, df_expense, df_merged = load_data()
 inc_city, inc_rural, exp_city, exp_rural = load_city_rural_data()
 
-# ===================== 侧边栏 =====================
+# ====================== 侧边栏 ======================
 with st.sidebar:
     st.title("📊 数据分析面板")
     st.divider()
@@ -108,14 +95,13 @@ with st.sidebar:
     st.divider()
     st.caption("✅ 数据加载完成")
 
-# ===================== 主页面 =====================
-# 1. 收入/支出板块逻辑
+# ====================== 1. 收入/支出板块 ======================
 if data_type in ["💰 收入数据", "💸 支出数据"]:
     type_text = "收入" if data_type == "💰 收入数据" else "支出"
     filtered = df[
         (df["年份"] == selected_year) &
         (df["指标"] == selected_indicator)
-        ].copy()
+    ].copy()
 
     filtered = filtered.sort_values("数值", ascending=(sort_order == "从低到高"))
 
@@ -171,7 +157,6 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.divider()
 
-    # 柱状图
     st.subheader(f"📊 {selected_year}年各省{type_text}对比")
     if not filtered.empty:
         fig1, ax1 = plt.subplots(figsize=(12, 9))
@@ -185,8 +170,10 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.divider()
 
-    # 趋势图
-    st.subheader(f"📈 2021-2024 年{type_text}变化趋势")
+    if type_text == "支出":
+        st.subheader("📈 2022-2025 年收入变化趋势")
+    else:
+        st.subheader("📈 2021-2024 年支出变化趋势")
     provinces = sorted(df["省份"].unique())
     selected_provs = st.multiselect("选择省份对比", provinces, default=provinces[:3])
 
@@ -202,7 +189,6 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
         st.pyplot(fig2)
         plt.close(fig2)
 
-    # 对应模块局部分析
     st.divider()
     st.subheader("📝 数据分析解读")
     if data_type == "💰 收入数据":
@@ -220,7 +206,7 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
         4. 历年消费数据稳步增长，体现居民生活品质持续提升。
         """)
 
-# 2. 收支对比板块逻辑
+# ====================== 2. 收支对比 ======================
 elif data_type == "⚖️ 收支对比":
     st.markdown(f"""
     <div style="background:#F0F7FF;padding:20px;border-radius:12px;">
@@ -284,7 +270,6 @@ elif data_type == "⚖️ 收支对比":
 
         ax1.set_xlim(left=0)
         ax1.set_ylim(bottom=0)
-
         max_val = max(filtered["收入"].max(), filtered["支出"].max()) * 1.1
         ax1.plot([0, max_val], [0, max_val], 'r--', alpha=0.6, label="收支平衡线")
 
@@ -293,7 +278,6 @@ elif data_type == "⚖️ 收支对比":
         ax1.set_title(f"{selected_year} 各省收入 vs 支出")
         ax1.legend()
         ax1.grid(alpha=0.3)
-
         st.pyplot(fig1)
         plt.close(fig1)
     else:
@@ -302,14 +286,13 @@ elif data_type == "⚖️ 收支对比":
     st.subheader(f"📊 {selected_year}年各省消费率对比")
     if not filtered.empty:
         fig2, ax2 = plt.subplots(figsize=(12, 6))
-        bars = ax2.bar(filtered["省份"], filtered["消费率(%)"], color="#F24236")
+        ax2.bar(filtered["省份"], filtered["消费率(%)"], color="#F24236")
         ax2.set_ylabel("消费率（%）")
         ax2.tick_params(axis='x', rotation=45)
         ax2.grid(axis='y', alpha=0.3)
         st.pyplot(fig2)
         plt.close(fig2)
 
-    # 收支对比局部分析
     st.divider()
     st.subheader("📝 数据分析解读")
     st.markdown("""
@@ -319,8 +302,7 @@ elif data_type == "⚖️ 收支对比":
     4. 高收入省份可同时兼顾高质量消费与合理储蓄，民生发展综合质量更优。
     """)
 
-# 3. 城乡对比板块 —— 已彻底修复支出无数据
-# 3. 城乡对比板块 —— 已删除支出对比，仅保留收入对比
+# ====================== 3. 城乡对比 ======================
 elif data_type == "🏙️ 城乡对比":
     st.markdown(f"""
     <div style="background:#E8F4FF;padding:20px;border-radius:12px;">
@@ -329,24 +311,19 @@ elif data_type == "🏙️ 城乡对比":
     </div>
     """, unsafe_allow_html=True)
 
-    # 固定为收入对比，删除选择器
     compare_type = "收入对比"
     city_df = inc_city.copy()
     rural_df = inc_rural.copy()
     type_text = "收入"
 
-    # 统一：先按选中年份过滤 → 再清理空值
     city_filtered = city_df[city_df["年份"] == selected_year][["省份", "数值"]].dropna(subset=["数值"])
     rural_filtered = rural_df[rural_df["年份"] == selected_year][["省份", "数值"]].dropna(subset=["数值"])
 
-    # 重命名
     city_filtered = city_filtered.rename(columns={"数值": f"城镇{type_text}"})
     rural_filtered = rural_filtered.rename(columns={"数值": f"农村{type_text}"})
 
-    # 合并数据
     compare_df = pd.merge(city_filtered, rural_filtered, on="省份", how="inner")
 
-    # 计算城乡比
     if not compare_df.empty:
         compare_df[f"城乡{type_text}比"] = (compare_df[f"城镇{type_text}"] / compare_df[f"农村{type_text}"]).round(2)
         compare_df = compare_df.sort_values(f"城乡{type_text}比", ascending=(sort_order == "从低到高"))
@@ -408,7 +385,6 @@ elif data_type == "🏙️ 城乡对比":
     else:
         st.info(f"📌 {selected_year} 年无{type_text}数据，无法生成图表")
 
-    # 城乡对比局部分析
     st.divider()
     st.subheader("📝 数据分析解读")
     st.markdown("""
@@ -418,6 +394,5 @@ elif data_type == "🏙️ 城乡对比":
     4. 缩小城乡收入差距，是实现共同富裕、推动区域协调发展的重要方向。
     """)
 
-# 页脚
 st.divider()
 st.caption("📊 全国居民收支分析平台 | 数据来源：公开统计数据 | 大数据可视化分析作品")
