@@ -1,19 +1,10 @@
 # ====================== 基础修复 ======================
 import os
-
 os.environ["PD_USE_ARROW"] = "0"
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
-import matplotlib
-
-matplotlib.use("Agg")
-
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-
-# ====================== 全局强制中文（兜底） ======================
-plt.rcParams['axes.unicode_minus'] = False
 
 # ====================== 下面的代码完全不用动 ======================
 st.set_page_config(
@@ -22,7 +13,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
 
 @st.cache_data
 def load_data():
@@ -107,7 +97,7 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
     filtered = df[
         (df["年份"] == selected_year) &
         (df["指标"] == selected_indicator)
-        ].copy()
+    ].copy()
 
     filtered = filtered.sort_values("数值", ascending=(sort_order == "从低到高"))
 
@@ -165,22 +155,13 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.subheader(f"📊 {selected_year}年各省{type_text}对比")
     if not filtered.empty:
-        # ========== 强制中文生效 ==========
-        plt.rcParams['font.family'] = ['sans-serif']
-        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
-
-        fig1, ax1 = plt.subplots(figsize=(12, 9))
-        bars = ax1.barh(filtered["省份"], filtered["数值"], color="#4A90E2")
-        ax1.set_xlabel(f"{type_text}（元）")
-        ax1.grid(axis='x', alpha=0.3)
-        st.pyplot(fig1)
-        plt.close(fig1)
+        # ✅ 使用 Streamlit 原生图表（永远不会中文乱码！）
+        st.bar_chart(filtered, x="省份", y="数值", use_container_width=True)
     else:
         st.warning("⚠️ 当前条件下无数据")
 
     st.divider()
 
-    # ====================== 年份标题已修复 ======================
     if type_text == "收入":
         st.subheader("📈 2021-2024 年收入变化趋势")
     else:
@@ -190,20 +171,10 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
     selected_provs = st.multiselect("选择省份对比", provinces, default=provinces[:3])
 
     if selected_provs:
-        # ========== 强制中文生效 ==========
-        plt.rcParams['font.family'] = ['sans-serif']
-        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
-
-        fig2, ax2 = plt.subplots(figsize=(11, 5))
-        for p in selected_provs:
-            sub = df[df["省份"] == p].sort_values("年份")
-            ax2.plot(sub["年份"], sub["数值"], marker='o', label=p)
-
-        ax2.set_ylabel(f"{type_text}（元）")
-        ax2.legend()
-        ax2.grid(alpha=0.3)
-        st.pyplot(fig2)
-        plt.close(fig2)
+        trend_data = df[df["省份"].isin(selected_provs)]
+        pivot_data = trend_data.pivot(index="年份", columns="省份", values="数值")
+        # ✅ 原生图表，中文100%正常
+        st.line_chart(pivot_data, use_container_width=True)
 
     st.divider()
     st.subheader("📝 数据分析解读")
@@ -269,60 +240,21 @@ elif data_type == "⚖️ 收支对比":
 
     st.divider()
 
-    st.subheader(f"📊 {selected_year}年各省收入-支出散点图")
+    st.subheader(f"📊 {selected_year}年各省收入-支出对比")
     if not filtered.empty:
-        # ========== 强制中文生效 ==========
-        plt.rcParams['font.family'] = ['sans-serif']
-        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
-
-        fig1, ax1 = plt.subplots(figsize=(12, 8))
-        ax1.scatter(filtered["收入"], filtered["支出"], color="#2E86AB", s=110, alpha=0.7)
-
-        for i, province in enumerate(filtered["省份"]):
-            ax1.annotate(
-                province,
-                (filtered["收入"].iloc[i], filtered["支出"].iloc[i]),
-                fontsize=9,
-                xytext=(5, 5),
-                textcoords="offset points"
-            )
-
-        ax1.set_xlim(left=0)
-        ax1.set_ylim(bottom=0)
-        max_val = max(filtered["收入"].max(), filtered["支出"].max()) * 1.1
-        ax1.plot([0, max_val], [0, max_val], 'r--', alpha=0.6, label="收支平衡线")
-
-        ax1.set_xlabel("人均收入（元）")
-        ax1.set_ylabel("人均支出（元）")
-        ax1.set_title(f"{selected_year} 各省收入 vs 支出")
-        ax1.legend()
-        ax1.grid(alpha=0.3)
-        st.pyplot(fig1)
-        plt.close(fig1)
-    else:
-        st.warning("⚠️ 当前年份暂无收支数据")
+        st.scatter_chart(filtered, x="收入", y="支出", color="省份", use_container_width=True)
 
     st.subheader(f"📊 {selected_year}年各省消费率对比")
     if not filtered.empty:
-        # ========== 强制中文生效 ==========
-        plt.rcParams['font.family'] = ['sans-serif']
-        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
-
-        fig2, ax2 = plt.subplots(figsize=(12, 6))
-        ax2.bar(filtered["省份"], filtered["消费率(%)"], color="#F24236")
-        ax2.set_ylabel("消费率（%）")
-        ax2.tick_params(axis='x', rotation=45)
-        ax2.grid(axis='y', alpha=0.3)
-        st.pyplot(fig2)
-        plt.close(fig2)
+        st.bar_chart(filtered, x="省份", y="消费率(%)", use_container_width=True)
 
     st.divider()
     st.subheader("📝 数据分析解读")
     st.markdown("""
     1. 散点图直观呈现各省份收支匹配关系，越靠近平衡线，收支结构越均衡稳定。
     2. 消费率高低反映地区居民消费意愿与储蓄习惯差异，经济活力越高消费意愿越强。
-    3. 收支结余额度体现家庭财富积累能力与民生抗风险水平。
-    4. 高收入省份可同时兼顾高质量消费与合理储蓄，民生发展综合质量更优。
+    3. 收支结余额度体现家庭财富积累能力，民生抗风险水平。
+    4. 高收入省份可同时兼顾高质量消费与合理储蓄。
     """)
 
 elif data_type == "🏙️ 城乡对比":
@@ -386,30 +318,9 @@ elif data_type == "🏙️ 城乡对比":
 
     st.divider()
 
-    st.subheader(f"📊 {selected_year}年各省城乡{type_text}对比柱状图")
+    st.subheader(f"📊 {selected_year}年各省城乡{type_text}对比")
     if not compare_df.empty:
-        # ========== 强制中文生效 ==========
-        plt.rcParams['font.family'] = ['sans-serif']
-        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
-
-        fig, ax = plt.subplots(figsize=(12, 8))
-        x = range(len(compare_df))
-        width = 0.35
-
-        ax.bar([i - width / 2 for i in x], compare_df[f"城镇{type_text}"], width, label="城镇", color="#4A90E2")
-        ax.bar([i + width / 2 for i in x], compare_df[f"农村{type_text}"], width, label="农村", color="#F24236")
-
-        ax.set_xlabel("省份")
-        ax.set_ylabel(f"{type_text}（元）")
-        ax.set_title(f"{selected_year}年各省城乡{type_text}对比")
-        ax.set_xticks(x)
-        ax.set_xticklabels(compare_df["省份"], rotation=45, ha="right")
-        ax.legend()
-        ax.grid(axis='y', alpha=0.3)
-        st.pyplot(fig)
-        plt.close(fig)
-    else:
-        st.info(f"📌 {selected_year} 年无{type_text}数据，无法生成图表")
+        st.bar_chart(compare_df, x="省份", y=[f"城镇{type_text}", f"农村{type_text}"], use_container_width=True)
 
     st.divider()
     st.subheader("📝 数据分析解读")
