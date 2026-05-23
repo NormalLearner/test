@@ -99,7 +99,10 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
         (df["指标"] == selected_indicator)
     ].copy()
 
+    # 1. 排序
     filtered = filtered.sort_values("数值", ascending=(sort_order == "从低到高"))
+    # 2. 设置为有序类别，让图表按这个顺序渲染
+    filtered["省份"] = pd.Categorical(filtered["省份"], categories=filtered["省份"].tolist(), ordered=True)
 
     st.markdown(f"""
     <div style="background:#F0F7FF;padding:20px;border-radius:12px;">
@@ -155,7 +158,6 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.subheader(f"📊 {selected_year}年各省{type_text}对比")
     if not filtered.empty:
-        # ✅ 使用 Streamlit 原生图表（永远不会中文乱码！）
         st.bar_chart(filtered, x="省份", y="数值", use_container_width=True)
     else:
         st.warning("⚠️ 当前条件下无数据")
@@ -173,7 +175,6 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
     if selected_provs:
         trend_data = df[df["省份"].isin(selected_provs)]
         pivot_data = trend_data.pivot(index="年份", columns="省份", values="数值")
-        # ✅ 原生图表，中文100%正常
         st.line_chart(pivot_data, use_container_width=True)
 
     st.divider()
@@ -204,6 +205,7 @@ elif data_type == "⚖️ 收支对比":
 
     filtered = df_merged[df_merged["年份"] == selected_year].copy()
     filtered = filtered.sort_values("收支差额", ascending=(sort_order == "从低到高"))
+    filtered["省份"] = pd.Categorical(filtered["省份"], categories=filtered["省份"].tolist(), ordered=True)
 
     col1, col2 = st.columns(2)
 
@@ -246,7 +248,9 @@ elif data_type == "⚖️ 收支对比":
 
     st.subheader(f"📊 {selected_year}年各省消费率对比")
     if not filtered.empty:
-        st.bar_chart(filtered, x="省份", y="消费率(%)", use_container_width=True)
+        filtered_consume = filtered.sort_values("消费率(%)", ascending=(sort_order == "从低到高"))
+        filtered_consume["省份"] = pd.Categorical(filtered_consume["省份"], categories=filtered_consume["省份"].tolist(), ordered=True)
+        st.bar_chart(filtered_consume, x="省份", y="消费率(%)", use_container_width=True)
 
     st.divider()
     st.subheader("📝 数据分析解读")
@@ -281,6 +285,7 @@ elif data_type == "🏙️ 城乡对比":
     if not compare_df.empty:
         compare_df[f"城乡{type_text}比"] = (compare_df[f"城镇{type_text}"] / compare_df[f"农村{type_text}"]).round(2)
         compare_df = compare_df.sort_values(f"城乡{type_text}比", ascending=(sort_order == "从低到高"))
+        compare_df["省份"] = pd.Categorical(compare_df["省份"], categories=compare_df["省份"].tolist(), ordered=True)
 
     col1, col2 = st.columns(2)
     with col1:
