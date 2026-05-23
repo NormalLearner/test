@@ -1,29 +1,20 @@
-# ====================== 【必须放在最开头！】云端强制中文字体修复 ======================
+# ====================== 基础修复 ======================
 import os
-import matplotlib
-# 强制使用非交互式后端，避免渲染问题
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 
-# 云端自动安装文泉驿中文字体（Linux 通用）
-if not os.path.exists("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"):
-    os.system("apt-get update -y && apt-get install -y fonts-wqy-zenhei")
-
-# 强制设置 Matplotlib 全局字体
-plt.rcParams.update({
-    "font.sans-serif": ["WenQuanYi Zen Hei", "SimHei", "Microsoft YaHei"],
-    "axes.unicode_minus": False,
-    "font.family": "sans-serif",
-    "mathtext.fontset": "dejavusans"
-})
-
-# ====================== 禁用 pandas arrow（你的原有代码） ======================
 os.environ["PD_USE_ARROW"] = "0"
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
-# ====================== 再导入其他库 ======================
+import matplotlib
+
+matplotlib.use("Agg")
+
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
+
+# ====================== 全局强制中文（兜底） ======================
+plt.rcParams['axes.unicode_minus'] = False
+
 # ====================== 下面的代码完全不用动 ======================
 st.set_page_config(
     page_title="全国居民收支分析平台",
@@ -31,6 +22,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
 
 @st.cache_data
 def load_data():
@@ -115,7 +107,7 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
     filtered = df[
         (df["年份"] == selected_year) &
         (df["指标"] == selected_indicator)
-    ].copy()
+        ].copy()
 
     filtered = filtered.sort_values("数值", ascending=(sort_order == "从低到高"))
 
@@ -173,6 +165,10 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
 
     st.subheader(f"📊 {selected_year}年各省{type_text}对比")
     if not filtered.empty:
+        # ========== 强制中文生效 ==========
+        plt.rcParams['font.family'] = ['sans-serif']
+        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+
         fig1, ax1 = plt.subplots(figsize=(12, 9))
         bars = ax1.barh(filtered["省份"], filtered["数值"], color="#4A90E2")
         ax1.set_xlabel(f"{type_text}（元）")
@@ -194,6 +190,10 @@ if data_type in ["💰 收入数据", "💸 支出数据"]:
     selected_provs = st.multiselect("选择省份对比", provinces, default=provinces[:3])
 
     if selected_provs:
+        # ========== 强制中文生效 ==========
+        plt.rcParams['font.family'] = ['sans-serif']
+        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+
         fig2, ax2 = plt.subplots(figsize=(11, 5))
         for p in selected_provs:
             sub = df[df["省份"] == p].sort_values("年份")
@@ -271,6 +271,10 @@ elif data_type == "⚖️ 收支对比":
 
     st.subheader(f"📊 {selected_year}年各省收入-支出散点图")
     if not filtered.empty:
+        # ========== 强制中文生效 ==========
+        plt.rcParams['font.family'] = ['sans-serif']
+        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+
         fig1, ax1 = plt.subplots(figsize=(12, 8))
         ax1.scatter(filtered["收入"], filtered["支出"], color="#2E86AB", s=110, alpha=0.7)
 
@@ -300,6 +304,10 @@ elif data_type == "⚖️ 收支对比":
 
     st.subheader(f"📊 {selected_year}年各省消费率对比")
     if not filtered.empty:
+        # ========== 强制中文生效 ==========
+        plt.rcParams['font.family'] = ['sans-serif']
+        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+
         fig2, ax2 = plt.subplots(figsize=(12, 6))
         ax2.bar(filtered["省份"], filtered["消费率(%)"], color="#F24236")
         ax2.set_ylabel("消费率（%）")
@@ -380,6 +388,10 @@ elif data_type == "🏙️ 城乡对比":
 
     st.subheader(f"📊 {selected_year}年各省城乡{type_text}对比柱状图")
     if not compare_df.empty:
+        # ========== 强制中文生效 ==========
+        plt.rcParams['font.family'] = ['sans-serif']
+        plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+
         fig, ax = plt.subplots(figsize=(12, 8))
         x = range(len(compare_df))
         width = 0.35
