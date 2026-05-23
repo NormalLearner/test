@@ -1,20 +1,27 @@
-# ====================== 终极跨平台字体修复（本地+云端100%生效） ======================
+# ====================== 【必须放在最开头！】云端强制中文字体修复 ======================
 import os
+import matplotlib
+# 强制使用非交互式后端，避免渲染问题
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 
-# 云端 Linux 自动安装中文字体（关键！）
+# 云端自动安装文泉驿中文字体（Linux 通用）
 if not os.path.exists("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"):
-    os.system("apt-get install -y fonts-wqy-zenhei")
+    os.system("apt-get update -y && apt-get install -y fonts-wqy-zenhei")
 
-# 强制使用云端一定有的字体
-plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
-plt.rcParams['axes.unicode_minus'] = False  # 负号正常
+# 强制设置 Matplotlib 全局字体
+plt.rcParams.update({
+    "font.sans-serif": ["WenQuanYi Zen Hei", "SimHei", "Microsoft YaHei"],
+    "axes.unicode_minus": False,
+    "font.family": "sans-serif",
+    "mathtext.fontset": "dejavusans"
+})
 
-# ====================== Arrow 错误修复 ======================
+# ====================== 禁用 pandas arrow（你的原有代码） ======================
 os.environ["PD_USE_ARROW"] = "0"
 os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
 
-# ====================== 导入其他库 ======================
+# ====================== 再导入其他库 ======================
 import streamlit as st
 import pandas as pd
 # ====================== 下面的代码完全不用动 ======================
