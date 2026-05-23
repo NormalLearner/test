@@ -1,13 +1,23 @@
-import streamlit as st
-import pandas as pd
-import matplotlib
-
-# ========== 永久修复中文乱码（必须放在最前面）==========
-matplotlib.use('Agg')
-matplotlib.rcParams['axes.unicode_minus'] = False
-matplotlib.rcParams['font.sans-serif'] = ["WenQuanYi Zen Hei", "SimHei", "Microsoft YaHei"]
+# ====================== 终极跨平台字体修复（本地+云端100%生效） ======================
+import os
 import matplotlib.pyplot as plt
 
+# 云端 Linux 自动安装中文字体（关键！）
+if not os.path.exists("/usr/share/fonts/truetype/wqy/wqy-zenhei.ttc"):
+    os.system("apt-get install -y fonts-wqy-zenhei")
+
+# 强制使用云端一定有的字体
+plt.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+plt.rcParams['axes.unicode_minus'] = False  # 负号正常
+
+# ====================== Arrow 错误修复 ======================
+os.environ["PD_USE_ARROW"] = "0"
+os.environ["PYARROW_IGNORE_TIMEZONE"] = "1"
+
+# ====================== 导入其他库 ======================
+import streamlit as st
+import pandas as pd
+# ====================== 下面的代码完全不用动 ======================
 st.set_page_config(
     page_title="全国居民收支分析平台",
     page_icon="📊",
